@@ -13,6 +13,7 @@ with open('output.txt', 'wb') as f:
 with open('output.txt','r', encoding = "utf-8") as f:
 	text = f.read()
 
+text = str(text).replace("\n","")
 text = str(text).replace("Contractor(s):","Contractors:")
 text = str(text).replace("Current:","Achieved:")
 
@@ -149,7 +150,5 @@ w.write('R1', "Country origin", bold)
 w.write('R2', getCountryFromContractors(contractors, "|"))
 w.write('V1', "TO", bold)
 w.write('V2', toSurname + ", " + toName[0] + ".")
-
-# TODO TD SD
 
 workbook.close()
