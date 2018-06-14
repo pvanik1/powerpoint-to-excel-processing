@@ -123,6 +123,24 @@ def getCountryFromContractors(input, delimiter):
 	output = output.rstrip(" " + delimiter + " ")
 	return output
 
+# TD,SD
+TD = ""
+SD = ""
+if isTRP:
+	TD = int(progRef[2:4])
+	SD_num = int(progRef[1])
+	switcher = {
+		1:"EO",
+		2:"SCI",
+		3:"EXP",
+		4:"ST",
+		5:"TEL",
+		6:"NAV",
+		7:"GEN"
+	}
+	SD = switcher.get(SD_num)
+	print("SD: " + str(SD))
+	print("TD: " + str(TD))
 
 ############################ WRITE IT TO EXCEL ###################################
 # Create an new Excel file and add a worksheet.
@@ -148,7 +166,17 @@ w.write('Q1', "Contractors", bold)
 w.write('Q2', contractors)
 w.write('R1', "Country origin", bold)
 w.write('R2', getCountryFromContractors(contractors, "|"))
+w.write('S1', "SD", bold)
+w.write('S2', SD)
+w.write('T1', "TD", bold)
+w.write('T2', TD)
 w.write('V1', "TO", bold)
-w.write('V2', toSurname + ", " + toName[0] + ".")
+w.write('V2', toSurname + ", " + toName[0] + "." + " " + toSection)
+w.write('X1', "SETFPDs", bold)
+w.write('X2', 'SETFPDs November 2017')
+w.write('Y1', "Video published", bold)
+w.write('Y2', '1')
+w.write('Z1', "TAT saved", bold)
+w.write('Z2', '1')
 
 workbook.close()
