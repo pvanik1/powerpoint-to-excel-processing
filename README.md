@@ -1,7 +1,5 @@
 # Powerpoint to Excel processing
-Tool for processing my custom ppt template and output a specified excel table
-
-Uses textract and xlsx writer modules.
+Python tool for processing my custom ppt template and output a specified excel table. Uses textract and xlsx writer python modules.
 
 Major changes:
 
