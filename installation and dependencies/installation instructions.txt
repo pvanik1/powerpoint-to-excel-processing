@@ -1,0 +1,14 @@
+Instructions based on https://github.com/deanmalmgren/textract/issues/194
+
+0. download and install microsoft visual c++ build tools (4GB - do steps 1.-3. in the meantime. Will ask for reboot.)
+1. download swigwin, unzip it and add it to system Path variable
+	http://www.swig.org/download.html
+2. download ebooklib v. 0.15 because textract module is incompatible with newer versions
+	https://github.com/aerkalov/ebooklib/releases
+3. Delete line 44 in README.md in the ebooklib unzipped folder
+4. Download the .whl file of Lxml according to your Python and Windows (32/64 bit) version
+	https://www.lfd.uci.edu/~gohlke/pythonlibs/#lxml
+5. In the directory wher eyou put the .whl file, in Powershell run "pip install [whl filename]"
+6. go to the ebooklib directory in Powershell and type "pip install ." without the quotes
+7. run pip install textract
+
