@@ -47,7 +47,7 @@ for i in range(len(filenames)):
 	text = str(text).replace("Current:","Achieved:")
 	text = str(text).replace(")",") ")
 	text = str(text).replace("Co-funded Budget:","")
-	text = str(text).replace("ESA Budget"," ESA Budget")Contractors :
+	text = str(text).replace("ESA Budget"," ESA Budget")
 	text = str(text).replace("Contractors :","Contractors:")
 
 	#for debugging

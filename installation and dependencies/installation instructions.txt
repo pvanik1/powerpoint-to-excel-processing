@@ -12,3 +12,5 @@ Instructions based on https://github.com/deanmalmgren/textract/issues/194
 6. go to the ebooklib directory in Powershell and type "pip install ." without the quotes
 7. run pip install textract
 
+For making it into an executable (py2exe nor pyinstaller don't yet support Python 3.7):
+xxx. even cx_freeze is impossible to install due to an error. Currently there is no way to make .exe with Python 3.7.
