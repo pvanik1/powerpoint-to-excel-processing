@@ -42,10 +42,13 @@ for i in range(len(filenames)):
 
 	text = str(text).replace("\n","")
 	text = str(text).replace("Contractor(s):","Contractors:")
+	text = str(text).replace("Prime:","Contractors:")
+	text = str(text).replace("Contractor:","Contractors:")
 	text = str(text).replace("Current:","Achieved:")
 	text = str(text).replace(")",") ")
 	text = str(text).replace("Co-funded Budget:","")
-	text = str(text).replace("ESA Budget"," ESA Budget")
+	text = str(text).replace("ESA Budget"," ESA Budget")Contractors :
+	text = str(text).replace("Contractors :","Contractors:")
 
 	#for debugging
 	with open('output.txt', 'w', encoding = "utf-8") as f:
@@ -58,13 +61,14 @@ for i in range(len(filenames)):
 	gstp_pattern = re.compile('G\d\d.-.*') # Regular expression matching GSTP reference
 	gstp_pattern2 = re.compile('A.*-\d\d\.*') # Regular expression matching GSTP reference
 	trp_pattern = re.compile('T\d\d\d-.*') # Regular expression matching TRP reference
+	trp_pattern2 = re.compile('AO\d.*') # Regular expression matching TRP reference
 	for word in text.split():
 		if ((gstp_pattern.match(word) is not None) or (gstp_pattern2.match(word) is not None)):
 			progRef = word
 			print("Programme Reference: " + progRef)
 			isGSTP = True
 			break
-		elif trp_pattern.match(word) is not None:
+		elif (trp_pattern.match(word) is not None) or (trp_pattern2.match(word) is not None):
 			progRef = word
 			print("Programme Reference: " + progRef)
 			isTRP = True
@@ -86,16 +90,26 @@ for i in range(len(filenames)):
 
 	# TARGET TRL
 	startTargetTRL = text.find("Target TRL:")
+	indexTargetTRL = startTargetTRL+len("Target TRL:")
 	if (startTargetTRL < 0):
 		print("---------- Target TRL could not be parsed ----------")
 		targetTRL = "UNPARSED"
 		problemParsingAttribute = True
+	# if Date cannot be found, only year
 	else:
-		indexTargetTRL = startTargetTRL+len("Target TRL:")
-		endTargetTRL = text.find("Date:")
-		targetTRL = text[indexTargetTRL:endTargetTRL].lstrip(' ')
-		targetTRL = targetTRL.strip(' \t\n\r')
-		print("Target TRL: " + targetTRL)
+		if text.find("Date:") < 0:
+			reNumber = re.compile('\d') # Regular expression matching a single digit
+			for character in text[indexTargetTRL:]:
+				if reNumber.match(character) is not None:
+					endTargetTRL = indexTargetTRL + text[indexTargetTRL:].find(character)
+					break
+			targetTRL = character
+			print("Target TRL: " + targetTRL)	
+		else:
+			endTargetTRL = text.find("Date:")
+			targetTRL = text[indexTargetTRL:endTargetTRL].lstrip(' ')
+			targetTRL = targetTRL.strip(' \t\n\r')
+			print("Target TRL: " + targetTRL)
 
 
 	# CONTRACTORS
@@ -184,8 +198,6 @@ for i in range(len(filenames)):
 	indexDate = text.find("Date:")
 	if (indexDate < 0):
 		print("---------- Date could not be parsed ----------")
-		achievedTRL = "UNPARSED"
-		problemParsingAttribute = True
 	else:
 		endIndexDate = text[indexDate:].find("TRL")
 		date = text[indexDate + len("Date:") : indexDate + endIndexDate].lstrip(' ')
@@ -250,7 +262,7 @@ for i in range(len(filenames)):
 	# TD,SD
 	TD = ""
 	SD = ""
-	if isTRP:
+	if isTRP and trp_pattern.match(progRef) is not None:
 		TD = int(progRef[2:4])
 		SD_num = int(progRef[1])
 		switcher = {
@@ -268,11 +280,34 @@ for i in range(len(filenames)):
 	print('\n')
 
 
+	# FOLLOW-UP
+	followupKeyWords = ("followup", "follow", "follow-up", "Follow-up", "Follow", "Followup", "Follow-on","follow-on","qualification" )
+	programsAndMissions = ("TRP","GSTP","GSP","NAVISP","ARTES", "HERA","ARIEL","MSR", "Mars", "Sample", "JUICE","Juice","Athena","Plato","Flex", "Galileo","MTG",
+		"national", "Horizon2020", "H2020", "Horizon")
+	followup = []
+	hasFollowUp = False
+
+	indexNextSteps = text.find("Next steps:")
+	if (startTargetTRL < 0):
+		endIndexNextSteps = text[-1]
+	else:
+		endIndexNextSteps = startTargetTRL
+	nextSteps = text[indexNextSteps:startTargetTRL]
+	for word in nextSteps.split():
+		if (word in followupKeyWords) or (word in programsAndMissions):
+			hasFollowUp = True
+			if word in programsAndMissions:
+				followup.append(word)
+
 	# Formatting for web statistics excel file
 	def formatIfUnparsed(parameter):
 		if (parameter == "UNPARSED" or parameter == ""):
 			return yellow
 
+	w.write('E1', "Follow-up?", bold)
+	w.write('E' + str(2+i), str(hasFollowUp))
+	w.write('F1', "Follow-up type", bold)
+	w.write('F' + str(2+i), str(followup))
 	w.write('I1', "Programme reference", bold)
 	w.write('I' + str(2+i), progRef, formatIfUnparsed(progRef))
 	w.write('K1', "Initial TRL", bold)
