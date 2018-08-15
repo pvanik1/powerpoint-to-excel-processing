@@ -15,7 +15,7 @@ from tkinter import messagebox
 
 ############################ PREPARE WORKBOOK ###################################
 # Create an new Excel file and add a worksheet.
-workbook = xlsxwriter.Workbook('web_excel_input.xlsx')
+workbook = xlsxwriter.Workbook('TAT_data.xlsx')
 w = workbook.add_worksheet()
 # Widen the first column to make the text clearer.
 w.set_column('Q:Q', 30)
@@ -40,6 +40,7 @@ for i in range(len(filenames)):
 	with open('output.txt','r', encoding = "utf-8") as f:
 		text = f.read()
 
+	# Pre-processing text
 	text = str(text).replace("\n","")
 	text = str(text).replace("Contractor(s):","Contractors:")
 	text = str(text).replace("Prime:","Contractors:")
@@ -304,6 +305,11 @@ for i in range(len(filenames)):
 		if (parameter == "UNPARSED" or parameter == ""):
 			return yellow
 
+	indexTATname = filenames[i].rfind('/')
+	TATname = filenames[i][indexTATname+1:]
+
+	w.write('D1', "File name", bold)
+	w.write('D' + str(2+i), TATname)
 	w.write('E1', "Follow-up?", bold)
 	w.write('E' + str(2+i), str(hasFollowUp))
 	w.write('F1', "Follow-up type", bold)
@@ -338,8 +344,6 @@ for i in range(len(filenames)):
 	w.write('Z' + str(2+i), '1')
 
 	if (problemParsingAttribute == True):
-		indexTATname = filenames[i].rfind('/')
-		TATname = filenames[i][indexTATname+1:]
 		if (thereAreUnindentifiedTATs == False):
 			with open('unparsedTATs.txt', 'w') as g:
 				g.write(TATname + '\n')
@@ -353,4 +357,4 @@ workbook.close()
 if thereAreUnindentifiedTATs:
 	messagebox.showinfo(
 		"Error parsing TATs", 
-		"One or more TATs were either not belonging to TRP/GSTP or filled out in a non-standard way and could not be parsed. Please check them manually. You can find the list of these TATs in 'unparsedTATs.txt'")
+		"One or more TATs were either not belonging to TRP/GSTP or filled out in a non-standard way and could not be parsed. Please check them manually." + '\n' + '\n' + "You can find the list of these TATs in 'unparsedTATs.txt' as well as in the Excel output file.")
