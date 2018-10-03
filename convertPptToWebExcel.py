@@ -12,15 +12,25 @@ import unicodedata
 import tkinter
 import re
 from tkinter import messagebox
+import os
 
 ############################ PREPARE WORKBOOK ###################################
+# Create a new folder and change directory to it
+dirpath = os.getcwd()
+newdir = dirpath + "\\Outputs" 
+os.makedirs(newdir,exist_ok=True)
+os.chdir(newdir)
+
 # Create an new Excel file and add a worksheet.
 workbook = xlsxwriter.Workbook('TAT_data.xlsx')
 w = workbook.add_worksheet()
+
 # Widen the first column to make the text clearer.
 w.set_column('Q:Q', 30)
+
 # Add a bold format to use to highlight cells.
 bold = workbook.add_format({'bold': True})
+
 # Add a yellow background colour format.
 yellow = workbook.add_format()
 yellow.set_pattern(1)
@@ -34,7 +44,7 @@ for i in range(len(filenames)):
 	print (filenames[i])
 	problemParsingAttribute = False
 
-	text = textract.process(filenames[i], extension="pptx", encoding="utf_8")
+	text = textract.process(filenames[i], encoding="utf_8")
 	with open('output.txt', 'wb') as f:
 	    f.write(text)
 	with open('output.txt','r', encoding = "utf-8") as f:
@@ -172,6 +182,7 @@ for i in range(len(filenames)):
 
 
 	# INITIAL TRL
+	initialTRL = "UNPARSED"
 	indexTo = text.find("TO:")
 	if (indexTo < 0):
 		print("---------- TO could not be parsed ----------")
