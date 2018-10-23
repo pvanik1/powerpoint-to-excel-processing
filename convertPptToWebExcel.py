@@ -21,7 +21,16 @@ newdir = dirpath + "\\Outputs"
 os.makedirs(newdir,exist_ok=True)
 os.chdir(newdir)
 
-# Create an new Excel file and add a worksheet.
+# Create a new Excel file and add a worksheet and check the file isn't already open so that the program can run properly.
+workbook = xlsxwriter.Workbook('TAT_data.xlsx')
+try:
+	workbook.close()
+except PermissionError:
+	messagebox.showinfo("Error: Close the workbook and try again", 
+						"The program cannot run while TAT_data.xlsx is open." + '\n' + '\n' + "Please close the file and re-run the program.")
+	print("The program cannot run while the TAT_output.xlsx file is open. Please close the file and re-run the program.")
+	quit()
+
 workbook = xlsxwriter.Workbook('TAT_data.xlsx')
 w = workbook.add_worksheet()
 
@@ -35,6 +44,8 @@ bold = workbook.add_format({'bold': True})
 yellow = workbook.add_format()
 yellow.set_pattern(1)
 yellow.set_bg_color('yellow')
+
+
 
 ############################ PROCESS POWERPOINT FILE ############################
 thereAreUnindentifiedTATs = False
@@ -55,49 +66,85 @@ for i in range(len(filenames)):
 	text = str(text).replace("Contractor(s):","Contractors:")
 	text = str(text).replace("Prime:","Contractors:")
 	text = str(text).replace("Contractor:","Contractors:")
+	text = str(text).replace("Contractor :","Contractors:")
 	text = str(text).replace("Current:","Achieved:")
 	text = str(text).replace(")",") ")
 	text = str(text).replace("Co-funded Budget:","")
 	text = str(text).replace("ESA Budget"," ESA Budget")
 	text = str(text).replace("Contractors :","Contractors:")
+	text = str(text).replace("Programme & Reference :","")
+	text = str(text).replace("Objective:","Objective(s) : ")
+	text = str(text).replace("Objectives:","Objective(s) : ")
+	text = str(text).replace("Next Steps:","Next steps:")
+	text = str(text).replace("Background:","Background and justification:")
+	# Next steps: replace capital	Next Steps:
 
 	#for debugging
 	with open('output.txt', 'w', encoding = "utf-8") as f:
 	    f.write(text)
 
-
 	# PROGRAM REFERENCE
+	# First checks in-file, then in file name because there is no guarantee filename is correct
 	isTRP = False
 	isGSTP = False
+	trpIndex = -1
+	gstpIndex = -1
+	progRef = "UNPARSED"
 	gstp_pattern = re.compile('G\d\d.-.*') # Regular expression matching GSTP reference
 	gstp_pattern2 = re.compile('A.*-\d\d\.*') # Regular expression matching GSTP reference
 	trp_pattern = re.compile('T\d\d\d-.*') # Regular expression matching TRP reference
-	trp_pattern2 = re.compile('AO\d.*') # Regular expression matching TRP reference
 	for word in text.split():
 		if ((gstp_pattern.match(word) is not None) or (gstp_pattern2.match(word) is not None)):
 			progRef = word
 			print("Programme Reference: " + progRef)
 			isGSTP = True
 			break
-		elif (trp_pattern.match(word) is not None) or (trp_pattern2.match(word) is not None):
+		elif (trp_pattern.match(word) is not None):
 			progRef = word
 			print("Programme Reference: " + progRef)
 			isTRP = True
+			print(" Y OF OF FO JFOI AFI AEOIF NAOENF AE FNEOIN AOF NEAO FIO ANOIE F")
 			break
+		else:
+			indexFilenameTRP = filenames[i].find("TRP")
+			indexFilenameGSTP = filenames[i].find("GSTP")
+			if (indexFilenameTRP >= 0):
+				temp = filenames[i][indexFilenameTRP + len("TRP_"):]
+				temp = temp.replace("–","-")
+				temp = temp.replace("_","-")
+				temp2 = temp.split("-",2)[:2]
+				progRef = "-".join(temp2).rstrip(' ')
+				print("Programme Reference: " + progRef)
+				isTRP = True
+				break				
+				
+			elif (indexFilenameGSTP >= 0):
+				temp = filenames[i][indexFilenameGSTP + len("GSTP_"):]
+				temp = temp.replace("–","-")
+				temp = temp.replace("_","-")
+				temp2 = temp.split("-",2)[:2]
+				progRef = "-".join(temp2).rstrip(' ')
+				print("Programme Reference: " + progRef)
+				isGSTP = True
+				break
+				
+			else:
+				progRef = "UNPARSED"
+				print("---------- Programme reference could not be parsed ----------")
+				problemParsingAttribute = True
+				break
 
-	if isTRP:
+	if (progRef.find("XXX") >= 0):		# check for if someone forgot a bad reference in the file name / missing reference
+		progRef = "UNPARSED"
+
+	if isTRP:							# contractor parsing code requires the index of "TRP" or "GSTP", if they exist with progRef
 		trpIndex = text.find(progRef)
-		if "TRP" in text[trpIndex-10:trpIndex]:
+		if "TRP" in text[trpIndex-50:trpIndex]:	
 			trpIndex = text.find("TRP")
 	elif isGSTP:
 		gstpIndex = text.find(progRef)
 		if "GSTP" in text[gstpIndex-10:gstpIndex]:
 			gstpIndex = text.find("GSTP")
-	else:
-		progRef = "UNPARSED"
-		print("---------- Program reference could not be parsed ----------")
-		problemParsingAttribute = True
-	
 
 	# TARGET TRL
 	startTargetTRL = text.find("Target TRL:")
@@ -129,14 +176,20 @@ for i in range(len(filenames)):
 		contractorsParsed = False
 	else:
 		indexContractors = text.find("Contractors:") + len("Contractors:")
-		if isTRP:
+		if (trpIndex > -1):
 			endContractors = trpIndex
-		elif isGSTP:
+		elif (gstpIndex > -1):
 			endContractors = gstpIndex
 		elif text[:300].find("GSTP") > -1:
 			endContractors = text[:300].find("GSTP")
 		elif text[:300].find("TRP") > -1:
 			endContractors = text[:300].find("TRP")
+		# elif text[:300].find("TEC-") > -1:
+		# 	endContractors = text[:300].find("TEC-")
+		# elif text[:300].find("ESA/ITT") > -1:
+		# 	endContractors = text[:300].find("ESA/ITT")
+		# elif text[:400].find("4000") > -1:
+		# 	endContractors = text[:400].find("4000")
 		else:
 			contractorsParsed = False
 	
@@ -150,6 +203,20 @@ for i in range(len(filenames)):
 		print ("Contractors: " + contractors)
 
 
+	# BACKGROUND AND JUSTIFICATION
+	backgroundAndJustification = "UNPARSED"
+	indexBackground = text.find("Background and justification:")
+	indexObjectives = text.find("Objective(s) :")
+	if (indexObjectives < 0):
+		indexObjectives = text.find("Objective(s)")
+	if ((indexBackground < 0) or (indexObjectives < 0)):
+		print("---------- Background could not be parsed ----------") #xxxx
+		print (" INDEX BACKGROUND " + str(indexBackground))
+		problemParsingAttribute = True
+	else:
+		backgroundAndJustification = text[indexBackground + len("Background and justification:") : indexObjectives]
+
+
 	# BUDGET
 	indexBudget = text.find("ESA Budget:")
 	if (indexBudget < 0):
@@ -158,9 +225,24 @@ for i in range(len(filenames)):
 		problemParsingAttribute = True
 	else:
 		indexBudget += len("ESA Budget:")
-		endBudget = text.find("k",indexBudget)
-		budget = text[indexBudget : endBudget]
+		if (indexBackground >= 0):
+			endBudget = indexBackground
+		else:
+			endBudget = text.find("k",indexBudget)
+		# If the euro symbol is in front of the number
+		budgetWords = text[indexBudget : endBudget].split(" ")
+		if (budgetWords[0] == "€"):
+			budget = budgetWords[1]
+		else:
+			budget = budgetWords[0]
+		# Process the string for input errors
 		budget = budget.strip(' \t\n\r')
+		budget = budget.strip('€')
+		wrong_pattern = re.compile('.*\d\d,\d\d\d')
+		if wrong_pattern.match(budget) is not None:
+			budget = budget[:-4]
+		if (str(budget).find("k") >= 0):
+			budget=budget[:str(budget).find("k")]
 		print("Budget (k€): " + budget)
 
 
@@ -271,6 +353,7 @@ for i in range(len(filenames)):
 		output = output.rstrip(" " + delimiter + " ")
 		return output
 
+
 	# TD,SD
 	TD = ""
 	SD = ""
@@ -292,24 +375,73 @@ for i in range(len(filenames)):
 	print('\n')
 
 
-	# FOLLOW-UP
-	followupKeyWords = ("followup", "follow", "follow-up", "Follow-up", "Follow", "Followup", "Follow-on","follow-on","qualification" )
+	# FOLLOW-UP AND NEXT STEPS
+	followupKeyWords = ("followup", "follow", "follow-up", "Follow-up", "Follow", "Followup", "Follow-on","follow-on","qualification", "ITT" )
 	programsAndMissions = ("TRP","GSTP","GSP","NAVISP","ARTES", "HERA","ARIEL","MSR", "Mars", "Sample", "JUICE","Juice","Athena","Plato","Flex", "Galileo","MTG",
-		"national", "Horizon2020", "H2020", "Horizon")
+		"national", "Horizon2020", "H2020", "Horizon", "EOEP")
 	followup = []
 	hasFollowUp = False
+	nextSteps = "UNPARSED"
 
 	indexNextSteps = text.find("Next steps:")
-	if (startTargetTRL < 0):
-		endIndexNextSteps = text[-1]
+	if ((startTargetTRL < 0) or (startTargetTRL < indexNextSteps)): 
+		endIndexNextSteps = len(text)
 	else:
 		endIndexNextSteps = startTargetTRL
-	nextSteps = text[indexNextSteps:startTargetTRL]
-	for word in nextSteps.split():
-		if (word in followupKeyWords) or (word in programsAndMissions):
-			hasFollowUp = True
-			if word in programsAndMissions:
-				followup.append(word)
+	if (indexNextSteps < 0):
+		print("---------- Next Steps could not be parsed ----------")
+		problemParsingAttribute = True
+	else:
+		nextSteps = text[indexNextSteps + len("Next steps: ") : endIndexNextSteps]
+		for word in nextSteps.split():
+			if (word in followupKeyWords) or (word in programsAndMissions):
+				hasFollowUp = True
+				if word in programsAndMissions:
+					followup.append(word)
+
+
+	# PRINT BACKGROUND & JUSTIFICATION
+	print("Background and justification: " + backgroundAndJustification + '\n')
+
+
+	# OBJECTIVES
+	objectives = "UNPARSED"
+	indexAchievements = text.find("Achievements and status:")
+	if ((indexObjectives < 0) or (indexAchievements < 0)):
+		print("---------- Objectives could not be parsed ----------")
+		problemParsingAttribute = True
+	else:
+		objectives = text[indexObjectives + len("Objective(s) :") : indexAchievements]
+		print("Objectives: " + objectives + '\n')
+
+
+	# ACHIEVEMENTS AND STATUS
+	achievementsAndStatus = "UNPARSED"
+	indexBenefits = text.find("Benefits:")
+	if ((indexAchievements < 0) or (indexBenefits < 0)):
+		print("---------- Achievements could not be parsed ----------")
+		problemParsingAttribute = True
+	else:
+		achievementsAndStatus = text[indexAchievements + len("Achievements and status: ") : indexBenefits]
+		print("Achievements and status: " + achievementsAndStatus + '\n')
+
+
+	# BENEFITS
+	benefits = "UNPARSED"
+	if ((indexBenefits < 0) or (indexNextSteps < 0)):
+		print("---------- Benefits could not be parsed ----------")
+		problemParsingAttribute = True
+	else:
+		benefits = text[indexBenefits + len("Benefits:") : indexNextSteps]
+		print("INDEX BENEFITS " + str(indexBenefits))
+		print("INDEX NEXT " + str(indexNextSteps))
+		print("Benefits: " + benefits + '\n')
+
+
+	# NEXT STEPS PRINT
+	if (nextSteps != "UNPARSED"):
+		print("Next steps: " + nextSteps + '\n')
+
 
 	# Formatting for web statistics excel file
 	def formatIfUnparsed(parameter):
@@ -319,12 +451,24 @@ for i in range(len(filenames)):
 	indexTATname = filenames[i].rfind('/')
 	TATname = filenames[i][indexTATname+1:]
 
-	w.write('D1', "File name", bold)
-	w.write('D' + str(2+i), TATname)
-	w.write('E1', "Follow-up?", bold)
-	w.write('E' + str(2+i), str(hasFollowUp))
-	w.write('F1', "Follow-up type", bold)
-	w.write('F' + str(2+i), str(followup))
+	w.write('A1', "File name", bold)
+	w.write('A' + str(2+i), TATname)
+	w.write('B1', "Follow-up?", bold)
+	w.write('B' + str(2+i), str(hasFollowUp))
+	w.write('C1', "Follow-up type", bold)
+	w.write('C' + str(2+i), str(followup))
+
+	w.write('D1', "Background and justification", bold)
+	w.write('D' + str(2+i), backgroundAndJustification, formatIfUnparsed(backgroundAndJustification))
+	w.write('E1', "Objectives", bold)
+	w.write('E' + str(2+i), objectives, formatIfUnparsed(objectives))
+	w.write('F1', "Achievements and status", bold)
+	w.write('F' + str(2+i), achievementsAndStatus, formatIfUnparsed(achievementsAndStatus))
+	w.write('G1', "Benefits", bold)
+	w.write('G' + str(2+i), benefits, formatIfUnparsed(benefits))
+	w.write('H1', "Next steps: ", bold)
+	w.write('H' + str(2+i), nextSteps, formatIfUnparsed(nextSteps))
+
 	w.write('I1', "Programme reference", bold)
 	w.write('I' + str(2+i), progRef, formatIfUnparsed(progRef))
 	w.write('K1', "Initial TRL", bold)
@@ -333,7 +477,7 @@ for i in range(len(filenames)):
 	w.write('L' + str(2+i), achievedTRL, formatIfUnparsed(achievedTRL))
 	w.write('M1', "Target TRL", bold)
 	w.write('M' + str(2+i), targetTRL, formatIfUnparsed(targetTRL))
-	w.write('N1', "Budget (k€)", bold)
+	w.write('N1', "ESA Budget (k€)", bold)
 	w.write('N' + str(2+i), budget, formatIfUnparsed(budget))
 	w.write('P1', "YoC", bold)
 	w.write('P' + str(2+i), yoc, formatIfUnparsed(yoc))
@@ -365,7 +509,11 @@ for i in range(len(filenames)):
 
 workbook.close()
 
+# Warn the user that some TATs have not been parsed fully
 if thereAreUnindentifiedTATs:
 	messagebox.showinfo(
 		"Error parsing TATs", 
 		"One or more TATs were either not belonging to TRP/GSTP or filled out in a non-standard way and could not be parsed. Please check them manually." + '\n' + '\n' + "You can find the list of these TATs in 'unparsedTATs.txt' as well as in the Excel output file.")
+
+# Open the Excel output file
+os.startfile(newdir + '\\'+ 'TAT_data.xlsx')
