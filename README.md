@@ -1,9 +1,12 @@
 # Powerpoint to Excel processing
-Python tool for processing my custom ppt template and output a specified excel table. Uses textract and xlsx writer python modules.
+Python tool to process my custom ppt template and to output a specified excel table. Uses textract and xlsx writer python modules.
 
-Includes executable file to run the program. To run it from the .py file, make modifications and rebuild, please follow the instructions below.
+Includes executable to run the program located in "\dist\convertPptToWebExcel". To run it from the .py file, to make modifications or to rebuild, please follow the instructions below.
 
 # Release notes:
+23/10/2018
+Added fields to be parsed and corrected parsing of fields.
+
 3/10/2018
 Added executable version using pyinstaller 3.4. Build instructions included.
 
@@ -11,13 +14,13 @@ Added executable version using pyinstaller 3.4. Build instructions included.
 Major improvements to robustness, stability and integrity of results. Added follow-up parsing functions. Tested on 60+ files to deal with individual cases generating errors.
 
 14/6/2018
-Fully working version.
+First working version.
 
 # How to run the main .py file:
 Instructions based on https://github.com/deanmalmgren/textract/issues/194. Dependencies can be found in the 'installation and dependencies' folder.
 
 -1. Install Python 3.7+
-0. download and install microsoft visual c++ build tools (4GB - do steps 1.-3. in the meantime. Will ask for reboot.)
+0. download and install microsoft visual c++ build tools (4GB - do steps 1.-3. in the meantime. You will be asked to reboot.)
 1. download swigwin, unzip it and add it to system Path variable
 	http://www.swig.org/download.html
 2. download ebooklib v. 0.15 because textract module is incompatible with newer versions
